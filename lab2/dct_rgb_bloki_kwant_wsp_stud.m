@@ -1,0 +1,70 @@
+clc;
+clear;
+close all;
+
+global sum_zeros;
+
+I = imread('.\obrazki\lena.tif');
+
+[numrows, numcols, layer]=size(I);
+numrows=floor(numrows/8)*8;
+numcols=floor(numcols/8)*8;
+number_of_blocks=(numrows*numcols)/64;
+I = imresize(I,[numrows numcols]);
+%imshow(I)
+
+A=double(I);
+
+fun_dct = @(block_struct) dct2(block_struct.data);
+fun_idct = @(block_struct) idct2(block_struct.data);
+
+%fun_kwant=@kwantyzacja6;
+fun_kwant=@kwantyzacja15;
+
+red = A(:,:,1);
+green = A(:,:,2);
+blue = A(:,:,3);
+
+B1 = blockproc(red, [8,8], fun_dct);
+C1 = blockproc(green, [8,8], fun_dct);
+D1 = blockproc(blue, [8,8], fun_dct);
+
+sum_zeros = 0;
+B2 = blockproc(B1, [8, 8], fun_kwant);
+R_block = 64-sum_zeros/number_of_blocks;
+
+sum_zeros = 0;
+C2 = blockproc(C1, [8, 8], fun_kwant);
+G_block = 64-sum_zeros/number_of_blocks;
+
+sum_zeros = 0;
+D2 = blockproc(D1, [8, 8], fun_kwant);
+B_block = 64-sum_zeros/number_of_blocks;
+
+B3 = blockproc(B2, [8,8], fun_idct);
+C3 = blockproc(C2, [8,8], fun_idct);
+D3 = blockproc(D2, [8,8], fun_idct);
+
+B3 = B3/255;
+C3 = C3/255;
+D3 = D3/255;
+
+B4 = im2uint8(B3);
+C4 = im2uint8(C3);
+D4 = im2uint8(D3);
+
+I2=cat(3,B4,C4,D4);
+
+figure(1);
+imshow(3*(I-I2)),  title('Ró¿nice');
+
+figure(2);
+imshow(I2), title('Obraz po kompresji')
+
+figure(3);
+imshow(I), title('Obraz oryginalny');
+
+fprintf('Czerwonych wsp zostalo: %0.1f\n', R_block);
+fprintf('Zielonych wsp zostalo: %0.1f\n', G_block);
+fprintf('Niebieskich wsp zostalo: %0.1f\n', B_block);
+
